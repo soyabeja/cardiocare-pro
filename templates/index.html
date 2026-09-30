@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CardioCare Pro - Control Cardiovascular Inteligente</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Google Font Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .heart-pulse {
+      animation: pulse-subtle 1.8s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-12 antialiased selection:bg-purple-200 selection:text-purple-900">
+
+  <header class="bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900 text-white shadow-lg sticky top-0 z-40 border-b border-purple-700/50">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 shadow-inner">
+          <i class="fa-solid fa-heart-pulse text-2xl text-pink-400 heart-pulse"></i>
+        </div>
+        <div>
+          <h1 class="font-black text-xl tracking-wide flex items-center gap-2">
+            CardioCare
+            <span class="text-[10px] bg-pink-500/30 text-pink-200 font-semibold px-2 py-0.5 rounded-full border border-pink-400/30 uppercase tracking-widest">Pro</span>
+          </h1>
+          <p class="text-xs text-purple-200/90 font-medium">Asistente & Control Cardiovascular</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="openPatientNameModal()" class="bg-white/10 hover:bg-white/20 text-white font-semibold text-xs px-3 py-2 rounded-xl backdrop-blur-md border border-white/20 flex items-center gap-2 transition active:scale-95 cursor-pointer" title="Cambiar nombre del paciente">
+          <i class="fa-solid fa-circle-user text-base text-pink-300"></i>
+          <span id="patientNameHeader" class="max-w-[110px] sm:max-w-[180px] truncate font-bold">Paciente: Juan Pérez</span>
+          <i class="fa-solid fa-pen-to-square text-[10px] text-purple-200"></i>
+        </button>
+
+        <button onclick="openAppointmentModal()" class="bg-white/10 hover:bg-white/20 text-white font-semibold text-xs px-3 py-2 rounded-xl backdrop-blur-md border border-white/20 flex items-center gap-2 transition active:scale-95 cursor-pointer relative" title="Gestionar Próxima Cita Médica">
+          <i class="fa-solid fa-calendar-check text-base text-amber-300 animate-pulse"></i>
+          <div class="text-left hidden sm:block">
+            <div class="text-[9px] uppercase tracking-wider text-purple-200">Próxima Cita</div>
+            <div id="headerAppointmentDate" class="text-xs font-bold leading-tight">25 Sep, 10:30</div>
+          </div>
+          <span id="appointmentAlarmBadge" class="p-1 bg-amber-400 text-purple-950 text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold" title="Alarma activada">
+            <i class="fa-solid fa-bell text-[9px]"></i>
+          </span>
+        </button>
+
+        <button onclick="toggleSOSModal()" class="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-xs sm:text-sm px-3.5 py-2 rounded-xl shadow-md hover:shadow-red-500/20 flex items-center gap-2 transition-all active:scale-95 border border-red-400/40">
+          <i class="fa-solid fa-phone-flip text-xs sm:text-sm animate-bounce"></i>
+          <span class="tracking-wider">S.O.S</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 pt-5 space-y-6">
+
+    <!-- Próxima Cita Banner y Datos del Paciente (Apilados verticalmente: Paciente arriba, Cita abajo) -->
+    <div class="flex flex-col gap-4">
+      <!-- Tarjeta / Panel de Datos del Paciente (Arriba) -->
+      <div id="patientInfoCard" class="bg-gradient-to-r from-purple-500/10 via-purple-500/5 to-indigo-500/10 border border-purple-300/60 p-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 bg-purple-700 text-white rounded-xl shadow-sm">
+            <i class="fa-solid fa-circle-user text-xl"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-purple-200 text-purple-900 rounded-md">Datos del Paciente</span>
+            </div>
+            <h4 id="bannerPatientName" class="font-bold text-slate-800 text-xs sm:text-sm mt-0.5">Juan Pérez</h4>
+            <p id="bannerPatientDetails" class="text-xs text-slate-600 font-medium">🪪 ID: <span id="patientIdNum">108524190</span> | 🩸 Tipo: <span id="patientBloodType">O+</span> | 📞 <span id="patientPhoneNum">+34 600 000 000</span></p>
+          </div>
+        </div>
+        <button onclick="openPatientDetailsModal()" class="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm active:scale-95 whitespace-nowrap cursor-pointer">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span class="hidden md:inline">Modificar</span>
+        </button>
+      </div>
+
+      <!-- Próxima Cita Banner (Abajo) -->
+      <div id="appointmentTopBanner" class="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-purple-500/10 border border-amber-300/60 p-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 bg-amber-500 text-white rounded-xl shadow-sm">
+            <i class="fa-solid fa-user-doctor text-xl"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-amber-200 text-amber-900 rounded-md">Próximo Control Médico</span>
+              <span id="bannerAppointmentAlarmStatus" class="text-[10px] font-bold text-amber-700 flex items-center gap-1">
+                <i class="fa-solid fa-bell"></i> Alarma programada
+              </span>
+            </div>
+            <h4 id="bannerAppointmentTitle" class="font-bold text-slate-800 text-xs sm:text-sm mt-0.5">Dr. Carlos Rodríguez (Cardiólogo)</h4>
+            <p id="bannerAppointmentDetails" class="text-xs text-slate-600 font-medium">📅 Viernes 25 Sep 2026 - 🕒 10:30 AM | 🏥 Clínica de Especialidades</p>
+          </div>
+        </div>
+        <button onclick="openAppointmentModal()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm active:scale-95 whitespace-nowrap cursor-pointer">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span class="hidden md:inline">Modificar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Selector de Diagnóstico / Condición Médica -->
+    <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-purple-100/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="p-3 bg-purple-50 text-purple-700 rounded-2xl border border-purple-100 shadow-sm">
+          <i class="fa-solid fa-notes-medical text-2xl"></i>
+        </div>
+        <div>
+          <label for="conditionSelect" class="block text-xs font-extrabold uppercase text-purple-950 tracking-wider">Diagnóstico o Condición Médica</label>
+          <p class="text-xs text-slate-500 mt-0.5">Asignado por tu equipo cardiológico de cabecera</p>
+        </div>
+      </div>
+      <div class="w-full md:w-1/2">
+        <select id="conditionSelect" onchange="updatePatientCondition(this.value)" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs sm:text-sm rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 p-3 font-bold transition shadow-sm">
+          <optgroup label="Hipertensión Arterial">
+            <option value="HIPERTENSIÓN ARTERIAL GRADO 1">HIPERTENSIÓN ARTERIAL GRADO 1</option>
+            <option value="HIPERTENSIÓN ARTERIAL GRADO 2">HIPERTENSIÓN ARTERIAL GRADO 2</option>
+            <option value="HIPERTENSIÓN ARTERIAL GRADO 3">HIPERTENSIÓN ARTERIAL GRADO 3</option>
+            <option value="HIPERTENSION ESENCIAL (PRIMARIA)" selected>HIPERTENSION ESENCIAL (PRIMARIA)</option>
+          </optgroup>
+          <optgroup label="Hipotensión Arterial">
+            <option value="HIPOTENSIÓN ARTERIAL GRADO 1">HIPOTENSIÓN ARTERIAL GRADO 1</option>
+            <option value="HIPOTENSIÓN ARTERIAL GRADO 2">HIPOTENSIÓN ARTERIAL GRADO 2</option>
+            <option value="HIPOTENSIÓN ARTERIAL GRADO 3">HIPOTENSIÓN ARTERIAL GRADO 3</option>
+          </optgroup>
+          <optgroup label="Arritmias y Trastornos del Ritmo">
+            <option value="ARRITMIA CARDIACA, NO ESPECIFICADA">ARRITMIA CARDIACA, NO ESPECIFICADA</option>
+            <option value="BRADICARDIA, NO ESPECIFICADA">BRADICARDIA, NO ESPECIFICADA</option>
+            <option value="DESPOLARIZACIÓN VENTRICULAR PREMATURA">DESPOLARIZACIÓN VENTRICULAR PREMATURA</option>
+            <option value="FIBRILACION Y ALETEO AURICULAR">FIBRILACION Y ALETEO AURICULAR</option>
+            <option value="FIBRILACIÓN AURICULAR PAROXÍSTICA">FIBRILACIÓN AURICULAR PAROXÍSTICA</option>
+            <option value="PALPITACIONES">PALPITACIONES</option>
+            <option value="SINDROME DEL SENO ENFERMO">SINDROME DEL SENO ENFERMO</option>
+            <option value="TAQUICARDIA, NO ESPECIFICADA">TAQUICARDIA, NO ESPECIFICADA</option>
+          </optgroup>
+          <optgroup label="Cardiomiopatías">
+            <option value="CARDIOMIOPATIA DILATADA">CARDIOMIOPATIA DILATADA</option>
+            <option value="CARDIOMIOPATIA ISQUEMICA">CARDIOMIOPATIA ISQUEMICA</option>
+            <option value="CARDIOMIOPATIA ALCOHOLICA">CARDIOMIOPATIA ALCOHOLICA</option>
+            <option value="CARDIOMIOPATIA HIPERTROFICA OBSTRUCTIVA">CARDIOMIOPATIA HIPERTROFICA OBSTRUCTIVA</option>
+            <option value="CARDIOMIOPATIA, NO ESPECIFICADA">CARDIOMIOPATIA, NO ESPECIFICADA</option>
+          </optgroup>
+          <optgroup label="Enfermedades Valvulares">
+            <option value="INSUFICIENCIA (DE LA VALVULA) MITRAL">INSUFICIENCIA (DE LA VALVULA) MITRAL</option>
+            <option value="PROLAPSO (DE LA VALVULA) MITRAL">PROLAPSO (DE LA VALVULA) MITRAL</option>
+            <option value="ESTENOSIS (DE LA VALVULA) AORTICA">ESTENOSIS (DE LA VALVULA) AORTICA</option>
+            <option value="INSUFICIENCIA TRICUSPIDE">INSUFICIENCIA TRICUSPIDE</option>
+          </optgroup>
+          <optgroup label="Insuficiencia Cardíaca">
+            <option value="INSUFICIENCIA CARDIACA CONGESTIVA">INSUFICIENCIA CARDIACA CONGESTIVA</option>
+            <option value="INSUFICIENCIA VENTRICULAR IZQUIERDA">INSUFICIENCIA VENTRICULAR IZQUIERDA</option>
+          </optgroup>
+          <optgroup label="Enfermedades Coronarias y Vasculares">
+            <option value="ANGINA INESTABLE">ANGINA INESTABLE</option>
+            <option value="DEFECTO DEL TABIQUE AURICULAR (CIA)">DEFECTO DEL TABIQUE AURICULAR (CIA)</option>
+            <option value="DOLOR PRECORDIAL">DOLOR PRECORDIAL</option>
+            <option value="SINCOPE Y COLAPSO">SINCOPE Y COLAPSO</option>
+          </optgroup>
+          <optgroup label="Procedimientos e Implantes">
+            <option value="PRESENCIA DE VALVULA CARDIACA PROTESICA">PRESENCIA DE VALVULA CARDIACA PROTESICA</option>
+            <option value="PRESENCIA DE MARCAPASO CARDIACO">PRESENCIA DE MARCAPASO CARDIACO</option>
+            <option value="PRESENCIA DE ANGIOPLASTIA Y PROTESIS CORONARIAS">PRESENCIA DE ANGIOPLASTIA Y PROTESIS CORONARIAS</option>
+          </optgroup>
+          <optgroup label="Metabólicas y Otras">
+            <option value="DIABETES MELLITUS NO INSULINODEPENDIENTE">DIABETES MELLITUS NO INSULINODEPENDIENTE</option>
+            <option value="HIPERCOLESTEROLEMIA PURA">HIPERCOLESTEROLEMIA PURA</option>
+            <option value="HIPERLIPIDEMIA MIXTA (DLP)">HIPERLIPIDEMIA MIXTA (DLP)</option>
+            <option value="OBESIDAD DEBIDA A EXCESO DE CALORIAS">OBESIDAD DEBIDA A EXCESO DE CALORIAS</option>
+            <option value="APNEA DEL SUENO">APNEA DEL SUENO</option>
+            <option value="ENFERMEDAD PULMONAR OBSTRUCTIVA CRONICA (EPOC)">ENFERMEDAD PULMONAR OBSTRUCTIVA CRONICA (EPOC)</option>
+            <option value="HIPOTIROIDISMO, NO ESPECIFICADO">HIPOTIROIDISMO, NO ESPECIFICADO</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+
+    <!-- Resumen y Progreso Diario -->
+    <div class="bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-950 text-white p-5 rounded-2xl shadow-md border border-purple-800 flex flex-col md:flex-row justify-between items-center gap-4 relative overflow-hidden">
+      <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-pink-500/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="z-10">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] bg-purple-700/80 border border-purple-400/30 text-purple-100 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Hoy</span>
+          <span id="currentDateStr" class="text-xs text-purple-200 font-medium"></span>
+        </div>
+        <h2 class="text-xl sm:text-2xl font-black mt-1 tracking-tight">Avance del Tratamiento</h2>
+        <p class="text-xs text-purple-200/90 mt-0.5">Completa tus tomas de medicamentos y revisiones médicas a tiempo.</p>
+      </div>
+
+      <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end z-10 border-t md:border-t-0 pt-3 md:pt-0 border-purple-800/80">
+        <div class="text-left md:text-right">
+          <div class="text-2xl sm:text-3xl font-black text-pink-300 tracking-tight" id="completionRateText">0%</div>
+          <div class="text-[10px] uppercase font-bold tracking-wider text-purple-200/80">Cumplimiento Hoy</div>
+        </div>
+        <button onclick="generateWeeklyReport()" class="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg hover:shadow-pink-500/25 transition-all flex items-center gap-2 active:scale-95">
+          <i class="fa-solid fa-file-medical text-sm"></i>
+          <span>Informe Semanal</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Pestañas de Navegación -->
+    <div class="flex border-b border-slate-200 bg-white rounded-t-2xl px-2 pt-2 gap-1 overflow-x-auto shadow-sm">
+      <button id="tab-btn-alarms" onclick="switchTab('alarms')" class="tab-btn border-b-2 border-purple-700 text-purple-700 font-extrabold px-4 py-3 text-xs sm:text-sm flex items-center gap-2 whitespace-nowrap transition cursor-pointer">
+        <i class="fa-solid fa-bell"></i>
+        <span>Alarmas y Horarios</span>
+      </button>
+      <button id="tab-btn-meds" onclick="switchTab('meds')" class="tab-btn border-b-2 border-transparent text-slate-500 font-semibold px-4 py-3 text-xs sm:text-sm flex items-center gap-2 whitespace-nowrap hover:text-purple-700 transition cursor-pointer">
+        <i class="fa-solid fa-pills"></i>
+        <span>Medicamentos</span>
+      </button>
+      <button id="tab-btn-vitals" onclick="switchTab('vitals')" class="tab-btn border-b-2 border-transparent text-slate-500 font-semibold px-4 py-3 text-xs sm:text-sm flex items-center gap-2 whitespace-nowrap hover:text-purple-700 transition cursor-pointer">
+        <i class="fa-solid fa-heart-pulse"></i>
+        <span>Presión & Vitals</span>
+      </button>
+      <button id="tab-btn-ai" onclick="switchTab('ai')" class="tab-btn border-b-2 border-transparent text-slate-500 font-semibold px-4 py-3 text-xs sm:text-sm flex items-center gap-2 whitespace-nowrap hover:text-purple-700 transition cursor-pointer">
+        <i class="fa-solid fa-robot"></i>
+        <span>Asistente IA</span>
+      </button>
+    </div>
+
+    <!-- Pestaña 1: Alarmas y Horarios -->
+    <section id="tab-alarms" class="tab-content space-y-4">
+      <div class="flex justify-between items-center pt-2">
+        <h3 class="font-bold text-slate-800 text-base sm:text-lg flex items-center gap-2">
+          <i class="fa-regular fa-clock text-purple-700"></i>
+          <span>Cronograma de Tomas y Tareas</span>
+        </h3>
+        <button onclick="openNewAlarmModal()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5 active:scale-95 cursor-pointer">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Nueva Alarma / Toma</span>
+        </button>
+      </div>
+      <div id="alarmsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Renderizado dinámico -->
+      </div>
+    </section>
+
+    <!-- Pestaña 2: Medicamentos -->
+    <section id="tab-meds" class="tab-content hidden space-y-4">
+      <div class="flex justify-between items-center pt-2">
+        <h3 class="font-bold text-slate-800 text-base sm:text-lg flex items-center gap-2">
+          <i class="fa-solid fa-prescription-bottle-medical text-purple-700"></i>
+          <span>Gabinete de Fármacos y Control Diario</span>
+        </h3>
+        <button onclick="openNewMedModal()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5 active:scale-95 cursor-pointer">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Agregar Fármaco</span>
+        </button>
+      </div>
+      <div id="medsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Renderizado dinámico -->
+      </div>
+    </section>
+
+    <!-- Pestaña 3: Presión y Vitales -->
+    <section id="tab-vitals" class="tab-content hidden space-y-4 pt-2">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <h4 class="font-bold text-slate-800 text-base mb-3 flex items-center gap-2 border-b pb-2">
+            <i class="fa-solid fa-heart-pulse text-purple-700"></i>
+            <span>Registrar Presión Arterial</span>
+          </h4>
+          <form onsubmit="handleVitalSubmit(event)" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Presión Sistólica (Alta - mmHg)</label>
+              <input type="number" id="vitalSystolic" placeholder="ej. 120" min="50" max="260" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm font-bold text-purple-900 focus:ring-2 focus:ring-purple-600 focus:outline-none transition">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Presión Diastólica (Baja - mmHg)</label>
+              <input type="number" id="vitalDiastolic" placeholder="ej. 80" min="30" max="160" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm font-bold text-purple-900 focus:ring-2 focus:ring-purple-600 focus:outline-none transition">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Ritmo Cardíaco (BPM / Pulso)</label>
+              <input type="number" id="vitalBpm" placeholder="ej. 72" min="30" max="230" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm font-bold text-purple-900 focus:ring-2 focus:ring-purple-600 focus:outline-none transition">
+            </div>
+            <button type="submit" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs py-3 rounded-xl transition shadow-md active:scale-98 cursor-pointer">
+              <i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Lectura
+            </button>
+          </form>
+        </div>
+
+        <div class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <div class="flex justify-between items-center border-b pb-2">
+            <h4 class="font-bold text-slate-800 text-base flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-purple-700"></i>
+              <span>Histórico de Lecturas</span>
+            </h4>
+            <span class="text-[11px] text-slate-500 font-medium">Límites óptimos: &lt;120/80 mmHg</span>
+          </div>
+          <div class="h-56 w-full relative">
+            <canvas id="vitalsChart"></canvas>
+          </div>
+          <div class="max-h-48 overflow-y-auto border-t border-slate-100 pt-2">
+            <table class="w-full text-xs text-left">
+              <thead class="text-slate-400 uppercase font-bold tracking-wider border-b">
+                <tr>
+                  <th class="pb-2">Fecha / Hora</th>
+                  <th class="pb-2">Sist / Diast</th>
+                  <th class="pb-2">Pulso</th>
+                  <th class="pb-2">Estado</th>
+                  <th class="pb-2 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="vitalsHistoryBody" class="divide-y divide-slate-100">
+                <!-- Renderizado dinámico -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pestaña 4: Asistente IA -->
+    <section id="tab-ai" class="tab-content hidden space-y-4 pt-2">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+          <div class="p-3 bg-purple-100 text-purple-700 rounded-xl">
+            <i class="fa-solid fa-robot text-xl"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-800 text-base">Asistente Cardiovascular IA</h3>
+            <p class="text-xs text-slate-500">Resuelve dudas sobre síntomas, dieta, medicamentos y hábitos cardioprotectores</p>
+          </div>
+        </div>
+
+        <div class="mb-3 flex flex-wrap gap-1.5">
+          <button onclick="setAiPrompt('¿Qué alimentos debo consumir y evitar para controlar mi presión arterial?')" class="text-[11px] bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold px-2.5 py-1 rounded-lg border border-purple-200/60 transition cursor-pointer">
+            🥗 Dieta Cardioprotectora
+          </button>
+          <button onclick="setAiPrompt('¿Qué debo hacer si siento ligeras palpitaciones o mareo leve?')" class="text-[11px] bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold px-2.5 py-1 rounded-lg border border-purple-200/60 transition cursor-pointer">
+            ⚠️ Síntomas y Mareos
+          </button>
+          <button onclick="setAiPrompt('¿Cómo debo tomar mis antihipertensivos si olvido una dosis?')" class="text-[11px] bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold px-2.5 py-1 rounded-lg border border-purple-200/60 transition cursor-pointer">
+            💊 Olvido de Dosis
+          </button>
+        </div>
+
+        <div id="chatMessages" class="h-72 overflow-y-auto p-4 bg-slate-50 rounded-xl space-y-3 border border-slate-200 text-xs sm:text-sm">
+          <div class="bg-purple-100/90 text-purple-950 p-3.5 rounded-2xl max-w-[88%] font-medium shadow-sm border border-purple-200/50">
+            👋 ¡Hola! Soy tu asistente médico virtual para la salud cardiovascular. Estoy configurado para tu condición actual (<b id="aiConditionBadge">HIPERTENSION ESENCIAL</b>). ¿En qué puedo orientarte hoy sobre tu plan, dieta o síntomas?
+          </div>
+        </div>
+
+        <form onsubmit="handleAIConsult(event)" class="mt-3 flex gap-2">
+          <input type="text" id="aiInput" placeholder="Ej: ¿Qué puedo cenar para mantener estable la presión?" required class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-purple-600 focus:outline-none font-medium">
+          <button type="submit" id="aiSendBtn" class="bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition shadow flex items-center gap-1.5 active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span class="hidden sm:inline">Enviar</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal Nombre Paciente -->
+  <div id="patientNameModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-slate-200">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-purple-900 text-base flex items-center gap-2">
+          <i class="fa-solid fa-circle-user text-purple-700"></i>
+          <span>Actualizar Datos del Paciente</span>
+        </h3>
+        <button onclick="closePatientNameModal()" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="savePatientDetails(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Nombre Completo</label>
+          <input type="text" id="patientNameInput" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Número de Identificación / ID</label>
+            <input type="text" id="patientIdInput" placeholder="ej. 108524190" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Tipo de Sangre</label>
+            <select id="patientBloodInput" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+              <option value="O+">O Positivo (O+)</option>
+              <option value="O-">O Negativo (O-)</option>
+              <option value="A+">A Positivo (A+)</option>
+              <option value="A-">A Negativo (A-)</option>
+              <option value="B+">B Positivo (B+)</option>
+              <option value="B-">B Negativo (B-)</option>
+              <option value="AB+">AB Positivo (AB+)</option>
+              <option value="AB-">AB Negativo (AB-)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Teléfono de Contacto / Confianza</label>
+          <input type="text" id="patientPhoneInput" placeholder="ej. +34 600 000 000" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t">
+          <button type="button" onclick="closePatientNameModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer">Cancelar</button>
+          <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer">Guardar Datos</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Próxima Cita -->
+  <div id="appointmentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-slate-200">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-purple-900 text-base flex items-center gap-2">
+          <i class="fa-solid fa-calendar-check text-purple-700"></i>
+          <span>Gestionar Cita y Alarma Médica</span>
+        </h3>
+        <button onclick="closeAppointmentModal()" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="saveAppointment(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Médico / Especialidad</label>
+          <input type="text" id="apptDoctor" placeholder="ej. Dr. Carlos Rodríguez (Cardiólogo)" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Fecha y Hora</label>
+            <input type="datetime-local" id="apptDatetime" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Ubicación / Clínica</label>
+            <input type="text" id="apptLocation" placeholder="ej. Clínica Central" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+          </div>
+        </div>
+        <div class="flex items-center gap-2 pt-1">
+          <input type="checkbox" id="apptAlarmToggle" class="w-4 h-4 text-purple-700 rounded focus:ring-purple-600">
+          <label for="apptAlarmToggle" class="text-xs font-bold text-slate-700">Activar Alarma de Recordatorio (Sonido y Aviso)</label>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t">
+          <button type="button" onclick="closeAppointmentModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer">Cancelar</button>
+          <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer">Guardar Cita</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Nueva Alarma / Toma -->
+  <div id="newAlarmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-slate-200">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-purple-900 text-base">Programar Alarma o Toma</h3>
+        <button onclick="closeNewAlarmModal()" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleAlarmSubmit(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Título de la Alarma / Fármaco</label>
+          <input type="text" id="alarmTitleInput" placeholder="ej. Losartán 50mg o Medición de Presión" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Hora Programada</label>
+            <input type="time" id="alarmTimeInput" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Tipo</label>
+            <select id="alarmTypeInput" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+              <option value="meds">Medicamento</option>
+              <option value="vital">Medición Vitals</option>
+              <option value="checkup">Revisión / Cita</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Instrucciones o Dosis</label>
+          <input type="text" id="alarmDescInput" placeholder="ej. Tomar con un vaso de agua" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t">
+          <button type="button" onclick="closeNewAlarmModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer">Cancelar</button>
+          <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer">Guardar Alarma</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Nuevo Fármaco -->
+  <div id="newMedModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-slate-200">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-purple-900 text-base">Agregar Fármaco al Gabinete</h3>
+        <button onclick="closeNewMedModal()" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleMedSubmit(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Medicamento</label>
+          <input type="text" id="medNameInput" placeholder="ej. Aspirina Protect 100mg" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Dosis</label>
+            <input type="text" id="medDoseInput" placeholder="ej. 1 tableta" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Frecuencia / Horario</label>
+            <input type="text" id="medFreqInput" placeholder="ej. Cada 24 horas (08:00)" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Stock Actual (Pastillas)</label>
+          <input type="number" id="medStockInput" value="30" min="1" max="500" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-semibold focus:ring-2 focus:ring-purple-600 focus:outline-none">
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t">
+          <button type="button" onclick="closeNewMedModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer">Cancelar</button>
+          <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer">Añadir Fármaco</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Informe Semanal -->
+  <div id="reportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4 border border-slate-200">
+      <div class="flex justify-between items-center border-b pb-3">
+        <div class="flex items-center gap-2 text-purple-900 font-bold text-lg">
+          <i class="fa-solid fa-file-medical text-purple-700"></i>
+          <span>Informe Semanal del Paciente</span>
+        </div>
+        <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-600 text-lg p-1 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="reportContent" class="space-y-4 text-xs sm:text-sm text-slate-700">
+        <!-- Renderizado dinámico -->
+      </div>
+      <div class="flex justify-end gap-2 border-t pt-3">
+        <button onclick="window.print()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition cursor-pointer">
+          <i class="fa-solid fa-print mr-1"></i> Imprimir / PDF
+        </button>
+        <button onclick="closeReportModal()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition cursor-pointer">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal S.O.S de Emergencia -->
+  <div id="sosModal" class="fixed inset-0 bg-red-950/75 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border-2 border-red-500">
+      <div class="flex justify-between items-center text-red-700 border-b pb-3">
+        <h3 class="font-black text-lg flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-red-600 animate-ping"></i>
+          <span>Línea de Emergencia S.O.S</span>
+        </h3>
+        <button onclick="toggleSOSModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
+      </div>
+      <div class="space-y-3 text-xs sm:text-sm text-slate-700">
+        <p class="font-bold text-red-900 bg-red-50 p-3 rounded-xl border border-red-200">
+          ⚠️ Si presenta dolor opresivo en el pecho, dificultad severa para respirar, desmayo o debilidad repentina en un extremo, active el protocolo de urgencias inmediatamente.
+        </p>
+        <div class="space-y-2 pt-2">
+          <a href="tel:123" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3 px-4 rounded-xl flex items-center justify-center gap-3 shadow-md transition active:scale-98">
+            <i class="fa-solid fa-phone-volume text-lg"></i>
+            <span>Llamar a Emergencias (123 / 911)</span>
+          </a>
+          <a id="sosContactLink" href="tel:+34600000000" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-3 shadow-md transition active:scale-98">
+            <i class="fa-solid fa-user-shield text-lg text-pink-400"></i>
+            <span id="sosContactText">Llamar a Contacto de Confianza (+34 600 000 000)</span>
+          </a>
+        </div>
+      </div>
+      <div class="pt-3 border-t flex justify-end">
+        <button onclick="toggleSOSModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl cursor-pointer">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Message Box Modal -->
+  <div id="customAlertModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 space-y-3 border border-slate-200 text-center">
+      <div id="customAlertIcon" class="w-12 h-12 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center mx-auto text-xl">
+        <i class="fa-solid fa-bell"></i>
+      </div>
+      <h4 id="customAlertTitle" class="font-bold text-slate-900 text-base">Notificación CardioCare</h4>
+      <p id="customAlertText" class="text-xs text-slate-600 font-medium">Mensaje informativo.</p>
+      <button onclick="closeCustomAlert()" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs py-2.5 rounded-xl cursor-pointer">Entendido</button>
+    </div>
+  </div>
+
+  <script>
+    // Estado global de la aplicación
+    let appState = {
+      patientName: "Juan Pérez",
+      patientId: "108524190",
+      patientBlood: "O+",
+      patientPhone: "+34 600 000 000",
+      condition: "HIPERTENSION ESENCIAL (PRIMARIA)",
+      appointment: {
+        doctor: "Dr. Carlos Rodríguez (Cardiólogo)",
+        datetime: "2026-09-25T10:30",
+        location: "Clínica de Especialidades del Valle",
+        alarmEnabled: true
+      },
+      alarms: [
+        { id: 1, title: "Losartán 50mg", time: "08:00", type: "meds", desc: "Tomar con un vaso de agua", completed: false },
+        { id: 2, title: "Medición Presión Matutina", time: "09:00", type: "vital", desc: "En reposo, sentado", completed: false },
+        { id: 3, title: "Aspirina Protect 100mg", time: "14:00", type: "meds", desc: "Después del almuerzo", completed: false },
+        { id: 4, title: "Medición Presión Nocturna", time: "20:00", type: "vital", desc: "Antes de cenar", completed: false }
+      ],
+      meds: [
+        { id: 1, name: "Losartán", dose: "50 mg", freq: "Cada 24h (08:00)", stock: 28 },
+        { id: 2, name: "Aspirina Protect", dose: "100 mg", freq: "Cada 24h (14:00)", stock: 45 },
+        { id: 3, name: "Atorvastatina", dose: "20 mg", freq: "Cada 24h (21:00)", stock: 14 }
+      ],
+      vitals: [
+        { id: 1, date: "22 Sep 08:30", sys: 124, dias: 82, bpm: 74, status: "Normal-Alto" },
+        { id: 2, date: "23 Sep 09:00", sys: 118, dias: 78, bpm: 70, status: "Óptima" },
+        { id: 3, date: "24 Sep 08:15", sys: 122, dias: 80, bpm: 72, status: "Normal" }
+      ],
+      chatHistory: [
+        { role: "assistant", text: "👋 ¡Hola! Soy tu asistente médico virtual para la salud cardiovascular. Estoy configurado para tu condición actual (HIPERTENSION ESENCIAL). ¿En qué puedo orientarte hoy sobre tu plan, dieta o síntomas?" }
+      ]
+    };
+
+    let vitalsChartInstance = null;
+
+    // Inicialización al cargar la ventana
+    window.onload = function() {
+      loadState();
+      updateDateDisplay();
+      renderAll();
+      initChart();
+      
+      // Verificación periódica de alarmas cada 30 segundos
+      setInterval(checkAlarmsTimer, 30000);
+    };
+
+    function saveState() {
+      try {
+        localStorage.setItem('cardiocare_pro_state', JSON.stringify(appState));
+      } catch (e) {
+        console.error("Error guardando estado local", e);
+      }
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem('cardiocare_pro_state');
+        if (saved) {
+          appState = JSON.parse(saved);
+        }
+      } catch (e) {
+        console.error("Error cargando estado local", e);
+      }
+    }
+
+    function updateDateDisplay() {
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const now = new Date();
+      document.getElementById('currentDateStr').innerText = now.toLocaleDateString('es-ES', options);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-purple-700', 'text-purple-700', 'font-extrabold');
+        btn.classList.add('border-transparent', 'text-slate-500', 'font-semibold');
+      });
+
+      document.getElementById('tab-' + tabId).classList.remove('hidden');
+      const activeBtn = document.getElementById('tab-btn-' + tabId);
+      activeBtn.classList.remove('border-transparent', 'text-slate-500', 'font-semibold');
+      activeBtn.classList.add('border-purple-700', 'text-purple-700', 'font-extrabold');
+
+      if (tabId === 'vitals' && vitalsChartInstance) {
+        vitalsChartInstance.update();
+      }
+    }
+
+    function renderAll() {
+      // Paciente Header
+      document.getElementById('patientNameHeader').innerText = `Paciente: ${appState.patientName}`;
+      document.getElementById('bannerPatientName').innerText = appState.patientName;
+      document.getElementById('patientIdNum').innerText = appState.patientId || "108524190";
+      document.getElementById('patientBloodType').innerText = appState.patientBlood || "O+";
+      document.getElementById('patientPhoneNum').innerText = appState.patientPhone || "+34 600 000 000";
+      document.getElementById('sosContactText').innerText = `Llamar a Contacto de Confianza (${appState.patientPhone || '+34 600 000 000'})`;
+      document.getElementById('sosContactLink').href = `tel:${appState.patientPhone || '+34600000000'}`;
+
+      // Inputs modal paciente
+      document.getElementById('patientNameInput').value = appState.patientName;
+      document.getElementById('patientIdInput').value = appState.patientId || "108524190";
+      document.getElementById('patientBloodInput').value = appState.patientBlood || "O+";
+      document.getElementById('patientPhoneInput').value = appState.patientPhone || "+34 600 000 000";
+
+      // Condición
+      const conditionSelect = document.getElementById('conditionSelect');
+      if (conditionSelect) conditionSelect.value = appState.condition;
+      document.getElementById('aiConditionBadge').innerText = appState.condition;
+
+      // Próxima Cita Banner
+      const appt = appState.appointment;
+      if (appt) {
+        const dObj = new Date(appt.datetime);
+        const dateStrFormatted = isNaN(dObj) ? appt.datetime : dObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        document.getElementById('headerAppointmentDate').innerText = dateStrFormatted;
+        document.getElementById('bannerAppointmentTitle').innerText = appt.doctor;
+        document.getElementById('bannerAppointmentDetails').innerText = `📅 ${dateStrFormatted} | 🏥 ${appt.location}`;
+        document.getElementById('appointmentAlarmBadge').style.display = appt.alarmEnabled ? 'flex' : 'none';
+        document.getElementById('bannerAppointmentAlarmStatus').style.display = appt.alarmEnabled ? 'flex' : 'none';
+        
+        // Modal inputs
+        document.getElementById('apptDoctor').value = appt.doctor;
+        document.getElementById('apptDatetime').value = appt.datetime;
+        document.getElementById('apptLocation').value = appt.location;
+        document.getElementById('apptAlarmToggle').checked = appt.alarmEnabled;
+      }
+
+      renderAlarms();
+      renderMeds();
+      renderVitalsTable();
+      updateCompletionRate();
+    }
+
+    function renderAlarms() {
+      const container = document.getElementById('alarmsContainer');
+      container.innerHTML = '';
+
+      if (appState.alarms.length === 0) {
+        container.innerHTML = `<div class="col-span-2 text-center py-8 text-slate-400 text-xs font-semibold">No hay alarmas programadas. Añade una nueva toma.</div>`;
+        return;
+      }
+
+      appState.alarms.forEach(alarm => {
+        const isMeds = alarm.type === 'meds';
+        const icon = isMeds ? 'fa-pills text-pink-500' : (alarm.type === 'vital' ? 'fa-heart-pulse text-indigo-500' : 'fa-user-doctor text-amber-500');
+        
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-2xl border transition shadow-sm flex items-center justify-between gap-3 ${alarm.completed ? 'bg-purple-50/60 border-purple-200' : 'bg-white border-slate-200'}`;
+        card.innerHTML = `
+          <div class="flex items-center gap-3.5">
+            <div class="p-3 rounded-xl bg-slate-100 flex items-center justify-center text-lg ${alarm.completed ? 'bg-purple-200 text-purple-800' : ''}">
+              <i class="fa-solid ${icon}"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-black text-purple-900 bg-purple-100 px-2 py-0.5 rounded-md">${alarm.time}</span>
+                <span class="text-[10px] font-bold uppercase text-slate-400">${alarm.type}</span>
+              </div>
+              <h4 class="font-bold text-slate-800 text-sm mt-1 ${alarm.completed ? 'line-through text-slate-400' : ''}">${alarm.title}</h4>
+              <p class="text-xs text-slate-500 font-medium">${alarm.desc || ''}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="toggleAlarmComplete(${alarm.id})" class="px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${alarm.completed ? 'bg-purple-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">
+              <i class="fa-solid ${alarm.completed ? 'fa-check-double' : 'fa-check'}"></i>
+              <span class="hidden sm:inline">${alarm.completed ? 'Completado' : 'Tomar'}</span>
+            </button>
+            <button onclick="deleteAlarm(${alarm.id})" class="text-slate-400 hover:text-red-500 p-2 cursor-pointer" title="Eliminar">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderMeds() {
+      const container = document.getElementById('medsContainer');
+      container.innerHTML = '';
+
+      if (appState.meds.length === 0) {
+        container.innerHTML = `<div class="col-span-2 text-center py-8 text-slate-400 text-xs font-semibold">No hay medicamentos en el gabinete.</div>`;
+        return;
+      }
+
+      appState.meds.forEach(med => {
+        const stockColor = med.stock < 10 ? 'text-red-600 bg-red-50 border-red-200' : 'text-purple-700 bg-purple-50 border-purple-100';
+        const card = document.createElement('div');
+        card.className = 'bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3';
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div class="flex items-center gap-3">
+              <div class="p-3 bg-purple-100 text-purple-700 rounded-xl">
+                <i class="fa-solid fa-pills text-lg"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-800 text-sm">${med.name}</h4>
+                <p class="text-xs text-purple-900 font-bold">Dosis: ${med.dose}</p>
+              </div>
+            </div>
+            <button onclick="deleteMed(${med.id})" class="text-slate-400 hover:text-red-500 p-1 cursor-pointer" title="Eliminar fármaco">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
+          <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+            <span class="text-slate-500 font-medium"><i class="fa-regular fa-clock mr-1"></i> ${med.freq}</span>
+            <span class="px-2.5 py-1 rounded-lg font-bold border ${stockColor}">Stock: ${med.stock} tab</span>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button onclick="adjustStock(${med.id}, 1)" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-1.5 rounded-lg transition cursor-pointer">+ Stock</button>
+            <button onclick="adjustStock(${med.id}, -1)" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-1.5 rounded-lg transition cursor-pointer">- Consumir</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateCompletionRate() {
+      if (appState.alarms.length === 0) {
+        document.getElementById('completionRateText').innerText = '0%';
+        return;
+      }
+      const completedCount = appState.alarms.filter(a => a.completed).length;
+      const rate = Math.round((completedCount / appState.alarms.length) * 100);
+      document.getElementById('completionRateText').innerText = `${rate}%`;
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('vitalsChart').getContext('2d');
+      vitalsChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: appState.vitals.map(v => v.date),
+          datasets: [
+            {
+              label: 'Sistólica (mmHg)',
+              data: appState.vitals.map(v => v.sys),
+              borderColor: '#9333ea',
+              backgroundColor: 'rgba(147, 51, 234, 0.1)',
+              borderWidth: 3,
+              tension: 0.3,
+              fill: true
+            },
+            {
+              label: 'Diastólica (mmHg)',
+              data: appState.vitals.map(v => v.dias),
+              borderColor: '#ec4899',
+              backgroundColor: 'rgba(236, 72, 153, 0.05)',
+              borderWidth: 2,
+              tension: 0.3,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11, weight: 'bold' } } }
+          },
+          scales: {
+            y: { beginAtZero: false, min: 40, max: 200 }
+          }
+        }
+      });
+    }
+
+    function updateChartData() {
+      if (!vitalsChartInstance) return;
+      vitalsChartInstance.data.labels = appState.vitals.map(v => v.date);
+      vitalsChartInstance.data.datasets[0].data = appState.vitals.map(v => v.sys);
+      vitalsChartInstance.data.datasets[1].data = appState.vitals.map(v => v.dias);
+      vitalsChartInstance.update();
+    }
+
+    function renderVitalsTable() {
+      const tbody = document.getElementById('vitalsHistoryBody');
+      tbody.innerHTML = '';
+
+      if (appState.vitals.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">Sin lecturas registradas.</td></tr>`;
+        return;
+      }
+
+      appState.vitals.slice().reverse().forEach(v => {
+        let badgeColor = 'bg-green-100 text-green-800 border-green-200';
+        if (v.sys >= 140 || v.dias >= 90) badgeColor = 'bg-red-100 text-red-800 border-red-200';
+        else if (v.sys >= 130 || v.dias >= 85) badgeColor = 'bg-amber-100 text-amber-800 border-amber-200';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="py-2.5 font-bold text-slate-800">${v.date}</td>
+          <td class="py-2.5 font-extrabold text-purple-900">${v.sys} / ${v.dias}</td>
+          <td class="py-2.5 font-semibold text-slate-600">${v.bpm} bpm</td>
+          <td class="py-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}">${v.status}</span></td>
+          <td class="py-2.5 text-right"><button onclick="deleteVital(${v.id})" class="text-slate-400 hover:text-red-500 cursor-pointer"><i class="fa-solid fa-trash-can"></i></button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function handleVitalSubmit(event) {
+      event.preventDefault();
+      const sys = parseInt(document.getElementById('vitalSystolic').value);
+      const dias = parseInt(document.getElementById('vitalDiastolic').value);
+      const bpm = parseInt(document.getElementById('vitalBpm').value);
+
+      let status = "Óptima";
+      if (sys >= 140 || dias >= 90) status = "Hipertensión";
+      else if (sys >= 130 || dias >= 85) status = "Normal-Alta";
+      else if (sys < 90 || dias < 60) status = "Hipotensión";
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + ' ' + now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+      appState.vitals.push({
+        id: Date.now(),
+        date: dateStr,
+        sys, dias, bpm, status
+      });
+
+      saveState();
+      updateChartData();
+      renderVitalsTable();
+      event.target.reset();
+      showAlert("Lectura Guardada", "La presión arterial y pulso se han registrado correctamente en el histórico.");
+    }
+
+    function setAiPrompt(promptText) {
+      document.getElementById('aiInput').value = promptText;
+    }
+
+    async function handleAIConsult(event) {
+      event.preventDefault();
+      const inputEl = document.getElementById('aiInput');
+      const query = inputEl.value.trim();
+      if (!query) return;
+
+      const chatContainer = document.getElementById('chatMessages');
+      
+      // Agregar mensaje usuario
+      appState.chatHistory.push({ role: 'user', text: query });
+      chatContainer.innerHTML += `
+        <div class="flex justify-end">
+          <div class="bg-purple-700 text-white p-3.5 rounded-2xl max-w-[88%] font-medium shadow-sm">
+            ${escapeHtml(query)}
+          </div>
+        </div>
+      `;
+      inputEl.value = '';
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      // Mostrar indicador escribiendo
+      const loadingId = 'loading_' + Date.now();
+      chatContainer.innerHTML += `
+        <div id="${loadingId}" class="flex items-center gap-2 text-purple-700 font-semibold p-2">
+          <i class="fa-solid fa-spinner animate-spin"></i> Asistente analizando condición (${appState.condition})...
+        </div>
+      `;
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      try {
+        const systemPrompt = `Eres un asistente médico virtual experto en cardiología para la aplicación CardioCare Pro. El paciente tiene diagnóstico de "${appState.condition}". Responde con empatía, precisión clínica, rigor científico, claridad y recomendaciones cardioprotectoras breves, incluyendo pautas dietéticas y recordatorios sobre tomas si procede. No sustituyes el criterio del médico prescriptor.`;
+        
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        
+        const payload = {
+          contents: [{ parts: [{ text: query }] }],
+          systemInstruction: { parts: [{ text: systemPrompt }] }
+        };
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        document.getElementById(loadingId)?.remove();
+
+        const candidate = result.candidates?.[0];
+        let replyText = "Lo siento, en este momento no he podido procesar tu consulta con el asistente IA. Consulta siempre con tu cardiólogo.";
+        if (candidate && candidate.content?.parts?.[0]?.text) {
+          replyText = candidate.content.parts[0].text;
+        }
+
+        appState.chatHistory.push({ role: 'assistant', text: replyText });
+        chatContainer.innerHTML += `
+          <div class="bg-purple-100/90 text-purple-950 p-3.5 rounded-2xl max-w-[88%] font-medium shadow-sm border border-purple-200/50">
+            ${escapeHtml(replyText)}
+          </div>
+        `;
+      } catch (e) {
+        document.getElementById(loadingId)?.remove();
+        const fallback = `Como asistente cardiológico para ${appState.condition}, te recuerdo mantener tus lecturas de presión estables, evitar exceso de sodio y cumplir puntualmente con tus medicamentos.`;
+        chatContainer.innerHTML += `
+          <div class="bg-purple-100/90 text-purple-950 p-3.5 rounded-2xl max-w-[88%] font-medium shadow-sm border border-purple-200/50">
+            ${fallback}
+          </div>
+        `;
+      }
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      saveState();
+    }
+
+    function generateWeeklyReport() {
+      const modal = document.getElementById('reportModal');
+      const content = document.getElementById('reportContent');
+
+      const completedCount = appState.alarms.filter(a => a.completed).length;
+      const totalAlarms = appState.alarms.length || 1;
+      const adherenceRate = Math.round((completedCount / totalAlarms) * 100);
+
+      let avgSys = 120, avgDias = 80, avgBpm = 72;
+      if (appState.vitals.length > 0) {
+        const sumSys = appState.vitals.reduce((acc, v) => acc + v.sys, 0);
+        const sumDias = appState.vitals.reduce((acc, v) => acc + v.dias, 0);
+        const sumBpm = appState.vitals.reduce((acc, v) => acc + v.bpm, 0);
+        avgSys = Math.round(sumSys / appState.vitals.length);
+        avgDias = Math.round(sumDias / appState.vitals.length);
+        avgBpm = Math.round(sumBpm / appState.vitals.length);
+      }
+
+      content.innerHTML = `
+        <div class="bg-purple-50 p-4 rounded-xl border border-purple-200 space-y-2">
+          <h4 class="font-black text-purple-900 text-base">📋 Reporte Clínico y Adherencia</h4>
+          <p><b>Paciente:</b> ${appState.patientName} (ID: ${appState.patientId || 'N/A'} | Sangre: ${appState.patientBlood || 'N/A'})</p>
+          <p><b>Diagnóstico / Condición:</b> ${appState.condition}</p>
+          <p><b>Fecha de Emisión:</b> ${new Date().toLocaleDateString('es-ES', { dateStyle: 'full' })}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-50 p-3 rounded-xl border">
+            <div class="text-[10px] uppercase font-bold text-slate-400">Promedio Presión Arterial</div>
+            <div class="text-xl font-black text-purple-900 mt-1">${avgSys} / ${avgDias} <span class="text-xs font-normal">mmHg</span></div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border">
+            <div class="text-[10px] uppercase font-bold text-slate-400">Pulso Cardíaco Medio</div>
+            <div class="text-xl font-black text-purple-900 mt-1">${avgBpm} <span class="text-xs font-normal">BPM</span></div>
+          </div>
+        </div>
+        <div class="bg-slate-50 p-4 rounded-xl border space-y-2">
+          <h5 class="font-bold text-slate-800">Adherencia al Tratamiento</h5>
+          <div class="w-full bg-slate-200 rounded-full h-3">
+            <div class="bg-purple-700 h-3 rounded-full" style="width: ${adherenceRate}%"></div>
+          </div>
+          <p class="text-xs text-slate-600">Cumplimiento del cronograma de tomas y medicación: <b>${adherenceRate}%</b></p>
+        </div>
+        <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 text-amber-900 text-xs">
+          <b>Próxima Cita Médica:</b> ${appState.appointment.doctor} - ${appState.appointment.datetime} (${appState.appointment.location})
+        </div>
+      `;
+
+      modal.classList.remove('hidden');
+    }
+
+    function openPatientNameModal() { document.getElementById('patientNameModal').classList.remove('hidden'); }
+    function openPatientDetailsModal() { document.getElementById('patientNameModal').classList.remove('hidden'); }
+    function closePatientNameModal() { document.getElementById('patientNameModal').classList.add('hidden'); }
+    function savePatientDetails(e) {
+      e.preventDefault();
+      const val = document.getElementById('patientNameInput').value.trim();
+      const idVal = document.getElementById('patientIdInput').value.trim();
+      const bloodVal = document.getElementById('patientBloodInput').value;
+      const phoneVal = document.getElementById('patientPhoneInput').value.trim();
+
+      if (val) {
+        appState.patientName = val;
+        appState.patientId = idVal;
+        appState.patientBlood = bloodVal;
+        appState.patientPhone = phoneVal;
+        saveState();
+        renderAll();
+        closePatientNameModal();
+        showAlert("Datos Actualizados", "La información personal y clínica del paciente ha sido actualizada correctamente.");
+      }
+    }
+
+    function openAppointmentModal() { document.getElementById('appointmentModal').classList.remove('hidden'); }
+    function closeAppointmentModal() { document.getElementById('appointmentModal').classList.add('hidden'); }
+    function saveAppointment(e) {
+      e.preventDefault();
+      appState.appointment = {
+        doctor: document.getElementById('apptDoctor').value,
+        datetime: document.getElementById('apptDatetime').value,
+        location: document.getElementById('apptLocation').value,
+        alarmEnabled: document.getElementById('apptAlarmToggle').checked
+      };
+      saveState();
+      renderAll();
+      closeAppointmentModal();
+      showAlert("Cita Actualizada", "Los datos de la próxima cita y la alarma han sido guardados.");
+    }
+
+    function openNewAlarmModal() { document.getElementById('newAlarmModal').classList.remove('hidden'); }
+    function closeNewAlarmModal() { document.getElementById('newAlarmModal').classList.add('hidden'); }
+    function handleAlarmSubmit(e) {
+      e.preventDefault();
+      appState.alarms.push({
+        id: Date.now(),
+        title: document.getElementById('alarmTitleInput').value,
+        time: document.getElementById('alarmTimeInput').value,
+        type: document.getElementById('alarmTypeInput').value,
+        desc: document.getElementById('alarmDescInput').value,
+        completed: false
+      });
+      saveState();
+      renderAlarms();
+      updateCompletionRate();
+      closeNewAlarmModal();
+      e.target.reset();
+    }
+
+    function toggleAlarmComplete(id) {
+      const alarm = appState.alarms.find(a => a.id === id);
+      if (alarm) {
+        alarm.completed = !alarm.completed;
+        saveState();
+        renderAlarms();
+        updateCompletionRate();
+      }
+    }
+
+    function deleteAlarm(id) {
+      appState.alarms = appState.alarms.filter(a => a.id !== id);
+      saveState();
+      renderAlarms();
+      updateCompletionRate();
+    }
+
+    function openNewMedModal() { document.getElementById('newMedModal').classList.remove('hidden'); }
+    function closeNewMedModal() { document.getElementById('newMedModal').classList.add('hidden'); }
+    function handleMedSubmit(e) {
+      e.preventDefault();
+      appState.meds.push({
+        id: Date.now(),
+        name: document.getElementById('medNameInput').value,
+        dose: document.getElementById('medDoseInput').value,
+        freq: document.getElementById('medFreqInput').value,
+        stock: parseInt(document.getElementById('medStockInput').value) || 30
+      });
+      saveState();
+      renderMeds();
+      closeNewMedModal();
+      e.target.reset();
+    }
+
+    function adjustStock(id, delta) {
+      const med = appState.meds.find(m => m.id === id);
+      if (med) {
+        med.stock = Math.max(0, med.stock + delta);
+        saveState();
+        renderMeds();
+      }
+    }
+
+    function deleteMed(id) {
+      appState.meds = appState.meds.filter(m => m.id !== id);
+      saveState();
+      renderMeds();
+    }
+
+    function deleteVital(id) {
+      appState.vitals = appState.vitals.filter(v => v.id !== id);
+      saveState();
+      updateChartData();
+      renderVitalsTable();
+    }
+
+    function updatePatientCondition(cond) {
+      appState.condition = cond;
+      saveState();
+      document.getElementById('aiConditionBadge').innerText = cond;
+    }
+
+    function toggleSOSModal() {
+      const modal = document.getElementById('sosModal');
+      modal.classList.toggle('hidden');
+    }
+
+    function closeReportModal() { document.getElementById('reportModal').classList.add('hidden'); }
+
+    function showAlert(title, text) {
+      document.getElementById('customAlertTitle').innerText = title;
+      document.getElementById('customAlertText').innerText = text;
+      document.getElementById('customAlertModal').classList.remove('hidden');
+    }
+    function closeCustomAlert() {
+      document.getElementById('customAlertModal').classList.add('hidden');
+    }
+
+    function checkAlarmsTimer() {
+      const now = new Date();
+      const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      appState.alarms.forEach(a => {
+        if (a.time === timeStr && !a.completed) {
+          // Trigger alarm notification
+        }
+      });
+    }
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return text.replace(/[&<>"']/g, m => map[m]);
+    }
+  </script>
+</body>
+</html>
